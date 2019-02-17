@@ -144,8 +144,15 @@ void Rover::land(const Map mars)
     x = temp.getDimX()/2;
     y = temp.getDimY()/2;
 
-    nm(temp.getDimX(),temp.getDimY(),'?');
+
+    /********************
+    *
+    *       Test part
+    *   I want a global variable nm and later change it like this.
+    *******************/
+    Map nm(temp.getDimX(),temp.getDimY(),'?');
     nm.setObject(x,y,'>');
+    nm.display();
 }
 
 bool Rover::turnLeft()
