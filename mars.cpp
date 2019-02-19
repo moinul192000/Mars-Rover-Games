@@ -1,19 +1,45 @@
 #include <iomanip> //for setw()
 #include <ctime>
 #include <windows.h>
-//#include "Map.h"
 #include "Rover.h"
 using namespace std;
+/*************************************
+*
+* This file contains the constructors
+* and Functions for the Mars Map.
+*
+**************************************/
+/******** Map Constructors ***********/
 
-//Map constructor
+Map::Map()
+{
+
+}
+
+/*
+Map::Map(int x, int y)
+{
+    dimX = x; dimY = y;
+    vector < vector<char> > v (dimY, vector<char>(dimX,' '));
+    map = v;
+}
+****Not necessary*****/
 
 Map::Map(int x, int y, char ch)
 {
+
     dimX = x; dimY = y;
     vector < vector<char> > v (dimY, vector<char>(dimX,ch));
     map = v;
 }
 
+
+/*************************************
+*           display()
+* This function displays the Map
+* Properly. It also shows the Heading
+* And footer part of the program.
+**************************************/
 void Map::display()
 {
     system("cls");
@@ -71,20 +97,32 @@ void Map::display()
     return;
 }
 
-//Set Object Function
+/****************************************
+*       setObject(),getObject
+* These are the setter and getter functions.
+* These are used to fetch and update
+* private data`s to the program.
+******************************************/
+
 void Map::setObject(int x, int y, char ch)
 {
     map[y][x] = ch;
     return;
 }
 
-//Get object
+
 char Map::getObject(int x, int y)
 {
     return map[y][x];
 }
 
-// Empty Check function
+/***************************************
+*       Checking Functions
+* These functions will check a specific
+* location of the map and return a boolean
+* value depending on the type of object.
+****************************************/
+
 bool Map::isEmpty(int x, int y)
 {
     if (map[y][x] == ' ')
@@ -94,7 +132,6 @@ bool Map::isEmpty(int x, int y)
 
 }
 
-//Is Hill check
 bool Map::isHill(int x, int y)
 {
     if(map[y][x] == 178)
@@ -103,7 +140,6 @@ bool Map::isHill(int x, int y)
         return false;
 }
 
-//Trap check
 bool Map::isTrap(int x, int y)
 {
     if(map[y][x] == '#')
@@ -112,7 +148,6 @@ bool Map::isTrap(int x, int y)
         return false;
 }
 
-//Is gold
 bool Map::isGold(int x, int y)
 {
     if(map[y][x] == '*')
@@ -121,8 +156,6 @@ bool Map::isGold(int x, int y)
         return false;
 }
 
-// Is Inside Map
-
 bool Map::isInsideMap(int x, int y)
 {
     if ((x < 0)||(x > dimX)||(y < 0)||(y > dimY))
@@ -130,30 +163,51 @@ bool Map::isInsideMap(int x, int y)
     return true;
 }
 
-
-Rover::Rover()
+/***********************************
+*           populate()
+* Calling this function will set
+* random objects on the map.
+*
+************************************/
+void Map::populate()
 {
-    x = 0;
-    y = 0;
+    char charlist[] =
+        {'*',
+        '#','#',
+        178, 178,
+        ' ', ' ', ' ', ' ', ' ', ' '};
+    srand(time(NULL));
+    for(int i = 0; i < dimY; i++)
+    {
+        for(int j = 0; j < dimX; j++)
+        {
+            int r = rand() % 11;
+            map[i][j] = charlist[r];
+        }
+    }
+}
+
+
+//Rover Constuctors
+
+Rover::Rover() : mapper()
+{
+
+}
+
+Rover::Rover(int height, int width) : mapper(height,width,'?')
+{
+    x = (height/2);
+    y = (width/2);
+    mapper.setObject(x,y,'^');
     heading = north;
 }
 
-void Rover::land(const Map mars)
+void Rover::land(Map& mars)
 {
-    Map temp = mars;
-    x = temp.getDimX()/2;
-    y = temp.getDimY()/2;
-
-
-    /********************
-    *
-    *       Test part
-    *   I want a global variable nm and later change it like this.
-    *******************/
-    Map nm(temp.getDimX(),temp.getDimY(),'?');
-    nm.setObject(x,y,'>');
-    nm.display();
+    p_mars = &mars;
 }
+
 
 bool Rover::turnLeft()
 {
@@ -217,16 +271,59 @@ bool Rover::move()
 {
     switch (heading)
     {
-        case north: y++; return true; break;
-        case west: x--;return true; break;
-        case south: y--;return true; break;
-        case east: x++;return true; break;
+        case north:
+            {
+                int temp_y = (y-1);
+                if((mapper.isInsideMap(x,temp_y)==true)&&(mapper.isHill(x,temp_y)==false))
+                {
+                    y--;
+                    if(mapper.isGold(x,y)==true)
+                    {
+                        //gold++;
+                        mapper.setObject(x,y,'^');
+                        mapper.setObject(x,(y+1),' ');
+                    }
+                    else if(mapper.isTrap(x,y)==true)
+                    {
+                        cout<<"Sorry you are dead!!" << endl;
+                    }
+                    else
+                    {
+                        mapper.setObject(x,y,'^');
+                        mapper.setObject(x,(y+1),' ');
+                    }
+
+                }
+                break;
+            }
     }
+
+}
+
+void Rover::displayMapper()
+{
+    switch(heading)
+    {
+        case north:
+            {
+                mapper.setObject(x,(y-1),p_mars->getObject(x,(y-1)));
+                mapper.setObject((x+1),(y-1),p_mars->getObject((x+1),(y-1)));
+                mapper.setObject((x-1),(y-1),p_mars->getObject((x-1),(y-1)));
+            }
+    }
+    mapper.display();
 }
 
 int main()
 {
     Map m(15,5,' ');
-    Rover r;
+    m.populate();
+    m.display();
+    Rover r(m.getDimX(),m.getDimY());
     r.land(m);
+    r.displayMapper();
+    Sleep(3000);
+    r.move();
+    r.displayMapper();
+
 }
